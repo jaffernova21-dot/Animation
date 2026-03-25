@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AUZE — Scroll Animation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050505;
+      --accent: #e8ff00;
+      --text: #f0f0f0;
+      --dim: #444;
+    }
+
+    html { scroll-behavior: auto; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    /* 4 scroll steps × 100vh + 1 base viewport */
+    #scroll-spacer {
+      height: 500vh;
+      position: relative;
+    }
+
+    /* Sticky stage */
+    #stage {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* grain overlay */
+    #stage::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 10;
+      opacity: .35;
+    }
+
+    /* Title */
+    #title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4rem, 12vw, 10rem);
+      letter-spacing: .18em;
+      color: var(--accent);
+      line-height: 1;
+      position: absolute;
+      top: 6vh;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      mix-blend-mode: difference;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* Video wrapper */
+    #video-wrap {
+      position: relative;
+      width: min(90vw, 960px);
+      aspect-ratio: 16/9;
+      border: 2px solid var(--dim);
+      box-shadow: 0 0 80px #e8ff0020;
+      overflow: hidden;
+      z-index: 3;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* scrub progress bar */
+    #progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      width: 0%;
+      background: var(--accent);
+      z-index: 6;
+    }
+
+    /* Scroll step indicators */
+    #steps {
+      position: absolute;
+      bottom: 7vh;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 1.2rem;
+      align-items: center;
+      z-index: 5;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--dim);
+      transition: background .3s, transform .3s;
+    }
+
+    .dot.active {
+      background: var(--accent);
+      transform: scale(1.5);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* Scroll hint */
+    #hint {
+      position: absolute;
+      right: 3vw;
+      top: 50%;
+      transform: translateY(-50%);
+      writing-mode: vertical-rl;
+      font-size: .65rem;
+      letter-spacing: .25em;
+      color: var(--dim);
+      text-transform: uppercase;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    #hint::before {
+      content: '';
+      width: 1px;
+      height: 60px;
+      background: linear-gradient(to bottom, transparent, var(--dim));
+      display: block;
+      animation: lineDown 1.4s ease-in-out infinite;
+    }
+
+    @keyframes lineDown {
+      0%   { transform: scaleY(0); transform-origin: top; }
+      50%  { transform: scaleY(1); transform-origin: top; }
+      51%  { transform: scaleY(1); transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; }
+    }
+
+    /* End screen */
+    #end-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .6s ease;
+    }
+
+    #end-screen.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #end-screen h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3rem, 9vw, 7rem);
+      color: var(--accent);
+      letter-spacing: .2em;
+      margin-bottom: 1rem;
+    }
+
+    #end-screen p {
+      font-size: .8rem;
+      color: var(--dim);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+
+    #restart-btn {
+      margin-top: 2.5rem;
+      padding: .7rem 2.4rem;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-family: 'Space Mono', monospace;
+      font-size: .75rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+
+    #restart-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* Step label */
+    #step-label {
+      position: absolute;
+      left: 3vw;
+      bottom: 7vh;
+      font-size: .65rem;
+      letter-spacing: .2em;
+      color: var(--dim);
+      text-transform: uppercase;
+      z-index: 5;
+    }
+
+    #step-label span {
+      color: var(--accent);
+    }
+
+    /* time display */
+    #time-display {
+      position: absolute;
+      left: 3vw;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .6rem;
+      letter-spacing: .15em;
+      color: var(--dim);
+      text-transform: uppercase;
+      z-index: 5;
+      line-height: 2;
+    }
+
+    #time-display .current {
+      font-size: 1.4rem;
+      color: var(--accent);
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: .1em;
+    }
+  </style>
+</head>
+<body>
+
+<div id="scroll-spacer">
+  <div id="stage">
+    <div id="title">AUZE</div>
+
+    <div id="video-wrap">
+      <video id="vid" src="auze.mp4" preload="auto" muted playsinline></video>
+      <div id="progress-bar"></div>
+    </div>
+
+    <div id="steps">
+      <div class="dot active" id="d0"></div>
+      <div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+    </div>
+
+    <div id="step-label">SCROLL STEP <span id="step-num">1</span> / 4</div>
+
+    <div id="time-display">
+      <div>TIME</div>
+      <div class="current" id="time-num">0.0s</div>
+      <div>/ 8.0s</div>
+    </div>
+
+    <div id="hint">scroll down</div>
+  </div>
+</div>
+
+<div id="end-screen">
+  <h2>AUZE</h2>
+  <p>Animation Complete</p>
+  <button id="restart-btn" onclick="restartExperience()">&#x21BA; Replay</button>
+</div>
+
+<script>
+  const vid        = document.getElementById('vid');
+  const progressBar= document.getElementById('progress-bar');
+  const dots       = [0,1,2,3].map(i => document.getElementById('d'+i));
+  const stepNumEl  = document.getElementById('step-num');
+  const timeNumEl  = document.getElementById('time-num');
+  const endScreen  = document.getElementById('end-screen');
+  const spacer     = document.getElementById('scroll-spacer');
+
+  const TOTAL_DURATION = 8;   // seconds
+  const STEPS          = 4;   // 4 scroll steps
+  const SEC_PER_STEP   = TOTAL_DURATION / STEPS; // 2s each
+
+  let lastStep = -1;
+  let animFrame;
+
+  // ── Init video ──
+  vid.addEventListener('loadedmetadata', () => {
+    vid.currentTime = 0;
+    vid.pause();
+  });
+
+  // ── Scroll handler ──
+  function spacerHeight() {
+    return spacer.offsetHeight - window.innerHeight;
+  }
+
+  window.addEventListener('scroll', () => {
+    const total = spacerHeight();
+    if (total <= 0) return;
+
+    const progress = Math.min(window.scrollY / total, 1); // 0→1
+    const rawStep  = progress * STEPS;
+    const step     = Math.min(Math.floor(rawStep), STEPS - 1); // 0→3
+
+    if (step !== lastStep) {
+      lastStep = step;
+      animateTo((step + 1) * SEC_PER_STEP);
+      updateUI(step);
+    }
+
+    if (progress >= 0.99) {
+      endScreen.classList.add('show');
+    } else {
+      endScreen.classList.remove('show');
+    }
+  }, { passive: true });
+
+  // ── Smooth seek animation ──
+  function animateTo(targetTime) {
+    cancelAnimationFrame(animFrame);
+    vid.pause();
+
+    function tick() {
+      const diff = targetTime - vid.currentTime;
+      if (Math.abs(diff) < 0.04) {
+        vid.currentTime = targetTime;
+        tick_ui();
+        return;
+      }
+      vid.currentTime += diff * 0.08;
+      tick_ui();
+      animFrame = requestAnimationFrame(tick);
+    }
+
+    function tick_ui() {
+      const pct = (vid.currentTime / TOTAL_DURATION) * 100;
+      progressBar.style.width = pct + '%';
+      timeNumEl.textContent   = vid.currentTime.toFixed(1) + 's';
+    }
+
+    tick();
+  }
+
+  // ── UI dots & step label ──
+  function updateUI(step) {
+    dots.forEach((d, i) => d.classList.toggle('active', i <= step));
+    stepNumEl.textContent = step + 1;
+  }
+
+  // ── Restart ──
+  function restartExperience() {
+    endScreen.classList.remove('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      cancelAnimationFrame(animFrame);
+      vid.currentTime = 0;
+      progressBar.style.width = '0%';
+      timeNumEl.textContent = '0.0s';
+      lastStep = -1;
+      updateUI(0);
+    }, 700);
+  }
+</script>
+</body>
+</html>
