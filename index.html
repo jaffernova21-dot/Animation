@@ -1,265 +1,395 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AUZE — Scroll Animation</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JAFFER — Web Developer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root{
+  --bg:#04040a;
+  --surface:#0c0c18;
+  --accent:#7c3aff;
+  --glow:#a56bff;
+  --cyan:#00f5d4;
+  --white:#f0eeff;
+  --muted:#5a546e;
+  --border:rgba(124,58,255,.25);
+}
 
-    :root {
-      --bg: #050505;
-      --accent: #e8ff00;
-      --text: #f0f0f0;
-      --dim: #444;
-    }
+html{scroll-behavior:auto;cursor:none}
+body{background:var(--bg);color:var(--white);font-family:'DM Mono',monospace;overflow-x:hidden}
 
-    html { scroll-behavior: auto; }
+/* ── custom cursor ── */
+#cursor{
+  position:fixed;width:12px;height:12px;border-radius:50%;
+  background:var(--accent);pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);transition:transform .1s,width .2s,height .2s,background .2s;
+  mix-blend-mode:screen;
+}
+#cursor-ring{
+  position:fixed;width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--glow);pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);transition:left .12s ease,top .12s ease,width .25s,height .25s,opacity .25s;
+  opacity:.6;
+}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Space Mono', monospace;
-      overflow-x: hidden;
-    }
+/* ── HERO ── */
+#hero{
+  height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
 
-    /* 4 scroll steps × 100vh + 1 base viewport */
-    #scroll-spacer {
-      height: 500vh;
-      position: relative;
-    }
+/* animated grid bg */
+#hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 100%);
+  animation:gridPulse 8s ease-in-out infinite;
+}
+@keyframes gridPulse{0%,100%{opacity:.4}50%{opacity:.9}}
 
-    /* Sticky stage */
-    #stage {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
+/* floating orbs */
+.orb{
+  position:absolute;border-radius:50%;filter:blur(90px);
+  animation:orbFloat 12s ease-in-out infinite;
+  pointer-events:none;
+}
+.orb1{width:500px;height:500px;background:#7c3aff22;top:-100px;left:-100px;animation-delay:0s}
+.orb2{width:400px;height:400px;background:#00f5d422;bottom:-80px;right:-80px;animation-delay:-4s}
+.orb3{width:300px;height:300px;background:#ff6b9d15;top:40%;left:60%;animation-delay:-8s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-30px) scale(1.08)}}
 
-    /* grain overlay */
-    #stage::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 10;
-      opacity: .35;
-    }
+.hero-tag{
+  font-size:.65rem;letter-spacing:.35em;text-transform:uppercase;
+  color:var(--cyan);border:1px solid rgba(0,245,212,.3);
+  padding:.35rem 1.1rem;border-radius:2rem;margin-bottom:2rem;
+  animation:fadeUp .8s .2s both;
+}
+#hero h1{
+  font-family:'Syne',sans-serif;font-weight:800;
+  font-size:clamp(4.5rem,14vw,11rem);
+  letter-spacing:-.02em;line-height:.92;
+  text-align:center;position:relative;z-index:2;
+  animation:fadeUp .8s .4s both;
+}
+#hero h1 .stroke{
+  -webkit-text-stroke:2px var(--accent);
+  color:transparent;
+}
+#hero h1 .solid{color:var(--white)}
 
-    /* Title */
-    #title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(4rem, 12vw, 10rem);
-      letter-spacing: .18em;
-      color: var(--accent);
-      line-height: 1;
-      position: absolute;
-      top: 6vh;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5;
-      mix-blend-mode: difference;
-      pointer-events: none;
-      white-space: nowrap;
-    }
+.hero-sub{
+  margin-top:1.8rem;font-size:.75rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted);
+  animation:fadeUp .8s .6s both;
+}
+.hero-sub span{color:var(--glow)}
 
-    /* Video wrapper */
-    #video-wrap {
-      position: relative;
-      width: min(90vw, 960px);
-      aspect-ratio: 16/9;
-      border: 2px solid var(--dim);
-      box-shadow: 0 0 80px #e8ff0020;
-      overflow: hidden;
-      z-index: 3;
-    }
+.hero-scroll{
+  position:absolute;bottom:3rem;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  animation:fadeUp .8s .9s both;
+}
+.scroll-line{
+  width:1px;height:60px;
+  background:linear-gradient(to bottom,var(--accent),transparent);
+  animation:lineGrow 1.6s ease-in-out infinite;
+}
+@keyframes lineGrow{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+.scroll-label{font-size:.55rem;letter-spacing:.3em;color:var(--muted);text-transform:uppercase}
 
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
 
-    /* scrub progress bar */
-    #progress-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 3px;
-      width: 0%;
-      background: var(--accent);
-      z-index: 6;
-    }
+/* ── SCROLL SPACER + STICKY STAGE ── */
+#scroll-spacer{height:600vh;position:relative}
 
-    /* Scroll step indicators */
-    #steps {
-      position: absolute;
-      bottom: 7vh;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 1.2rem;
-      align-items: center;
-      z-index: 5;
-    }
+#stage{
+  position:sticky;top:0;height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  overflow:hidden;
+}
 
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--dim);
-      transition: background .3s, transform .3s;
-    }
+/* cinematic vignette */
+#stage::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 80% at 50% 50%,transparent 40%,#04040acc 100%);
+  pointer-events:none;z-index:4;
+}
 
-    .dot.active {
-      background: var(--accent);
-      transform: scale(1.5);
-      box-shadow: 0 0 8px var(--accent);
-    }
+/* section label */
+.section-eyebrow{
+  position:absolute;top:7vh;left:50%;transform:translateX(-50%);
+  font-size:.6rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--cyan);z-index:6;white-space:nowrap;
+}
 
-    /* Scroll hint */
-    #hint {
-      position: absolute;
-      right: 3vw;
-      top: 50%;
-      transform: translateY(-50%);
-      writing-mode: vertical-rl;
-      font-size: .65rem;
-      letter-spacing: .25em;
-      color: var(--dim);
-      text-transform: uppercase;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-    }
+/* ── VIDEO ── */
+#video-outer{
+  position:relative;z-index:3;
+  width:min(88vw,980px);
+  filter:drop-shadow(0 0 60px #7c3aff55);
+  transition:filter .4s;
+}
+#video-outer.playing{filter:drop-shadow(0 0 100px #7c3affaa)}
 
-    #hint::before {
-      content: '';
-      width: 1px;
-      height: 60px;
-      background: linear-gradient(to bottom, transparent, var(--dim));
-      display: block;
-      animation: lineDown 1.4s ease-in-out infinite;
-    }
+/* corner decorators */
+.corner{
+  position:absolute;width:22px;height:22px;
+  border-color:var(--cyan);border-style:solid;
+  z-index:7;
+}
+.corner.tl{top:-2px;left:-2px;border-width:2px 0 0 2px}
+.corner.tr{top:-2px;right:-2px;border-width:2px 2px 0 0}
+.corner.bl{bottom:-2px;left:-2px;border-width:0 0 2px 2px}
+.corner.br{bottom:-2px;right:-2px;border-width:0 2px 2px 0}
 
-    @keyframes lineDown {
-      0%   { transform: scaleY(0); transform-origin: top; }
-      50%  { transform: scaleY(1); transform-origin: top; }
-      51%  { transform: scaleY(1); transform-origin: bottom; }
-      100% { transform: scaleY(0); transform-origin: bottom; }
-    }
+#video-wrap{
+  position:relative;
+  width:100%;aspect-ratio:16/9;
+  background:#0a0a1a;
+  overflow:hidden;
+}
 
-    /* End screen */
-    #end-screen {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 50;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .6s ease;
-    }
+video{width:100%;height:100%;object-fit:cover;display:block}
 
-    #end-screen.show {
-      opacity: 1;
-      pointer-events: all;
-    }
+/* glitch scanlines on video */
+#video-wrap::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,transparent,transparent 3px,rgba(0,0,0,.06) 3px,rgba(0,0,0,.06) 4px);
+  z-index:2;
+}
 
-    #end-screen h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(3rem, 9vw, 7rem);
-      color: var(--accent);
-      letter-spacing: .2em;
-      margin-bottom: 1rem;
-    }
+/* progress track */
+#track{
+  position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:rgba(255,255,255,.06);z-index:8;overflow:hidden;
+}
+#progress-bar{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--cyan));
+  transition:width .07s linear;
+  box-shadow:0 0 12px var(--glow);
+}
 
-    #end-screen p {
-      font-size: .8rem;
-      color: var(--dim);
-      letter-spacing: .2em;
-      text-transform: uppercase;
-    }
+/* ── STEP DOTS ── */
+#steps{
+  position:absolute;bottom:7vh;left:50%;transform:translateX(-50%);
+  display:flex;gap:1rem;align-items:center;z-index:6;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--muted);border:1px solid rgba(255,255,255,.1);
+  transition:all .4s cubic-bezier(.34,1.56,.64,1);
+}
+.dot.active{
+  background:var(--accent);
+  border-color:var(--glow);
+  box-shadow:0 0 14px var(--accent);
+  transform:scale(1.7);
+}
+.dot.done{
+  background:var(--cyan);
+  border-color:var(--cyan);
+  transform:scale(1.1);
+}
 
-    #restart-btn {
-      margin-top: 2.5rem;
-      padding: .7rem 2.4rem;
-      border: 1px solid var(--accent);
-      background: transparent;
-      color: var(--accent);
-      font-family: 'Space Mono', monospace;
-      font-size: .75rem;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: background .2s, color .2s;
-    }
+/* step counter */
+#step-counter{
+  position:absolute;right:4vw;bottom:7vh;
+  font-size:.6rem;letter-spacing:.2em;color:var(--muted);
+  text-transform:uppercase;z-index:6;
+}
+#step-counter em{color:var(--accent);font-style:normal;font-size:1.1rem;font-family:'Syne',sans-serif}
 
-    #restart-btn:hover {
-      background: var(--accent);
-      color: var(--bg);
-    }
+/* side decorative text */
+.side-text{
+  position:absolute;writing-mode:vertical-rl;
+  font-size:.55rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--muted);z-index:6;
+}
+.side-text.left{left:2.5vw;top:50%;transform:translateY(-50%)}
+.side-text.right{right:2.5vw;top:50%;transform:translateY(-50%) rotate(180deg)}
 
-    /* Step label */
-    #step-label {
-      position: absolute;
-      left: 3vw;
-      bottom: 7vh;
-      font-size: .65rem;
-      letter-spacing: .2em;
-      color: var(--dim);
-      text-transform: uppercase;
-      z-index: 5;
-    }
+/* ── END SCREEN ── */
+#end-screen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:50;opacity:0;pointer-events:none;
+  transition:opacity .8s ease;
+}
+#end-screen.show{opacity:1;pointer-events:all}
 
-    #step-label span {
-      color: var(--accent);
-    }
+.end-tag{
+  font-size:.6rem;letter-spacing:.35em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:1.5rem;
+}
+#end-screen h2{
+  font-family:'Syne',sans-serif;font-weight:800;
+  font-size:clamp(3rem,9vw,8rem);
+  letter-spacing:-.02em;
+  background:linear-gradient(135deg,var(--white),var(--glow));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:.4rem;
+}
+#end-screen .tagline{
+  font-size:.7rem;letter-spacing:.2em;color:var(--muted);
+  text-transform:uppercase;margin-bottom:2.5rem;
+}
 
-    /* time display */
-    #time-display {
-      position: absolute;
-      left: 3vw;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: .6rem;
-      letter-spacing: .15em;
-      color: var(--dim);
-      text-transform: uppercase;
-      z-index: 5;
-      line-height: 2;
-    }
+/* social + replay row */
+.end-links{display:flex;gap:1.5rem;align-items:center}
 
-    #time-display .current {
-      font-size: 1.4rem;
-      color: var(--accent);
-      font-family: 'Bebas Neue', sans-serif;
-      letter-spacing: .1em;
-    }
-  </style>
+.ig-link{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.65rem 1.5rem;
+  border:1px solid var(--border);
+  background:rgba(124,58,255,.08);
+  color:var(--glow);text-decoration:none;
+  font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;
+  border-radius:4px;transition:all .25s;
+}
+.ig-link:hover{background:rgba(124,58,255,.2);border-color:var(--accent);box-shadow:0 0 24px #7c3aff44}
+.ig-link svg{flex-shrink:0}
+
+#replay-btn{
+  padding:.65rem 1.8rem;
+  border:1px solid var(--cyan);
+  background:transparent;color:var(--cyan);
+  font-family:'DM Mono',monospace;font-size:.7rem;
+  letter-spacing:.2em;text-transform:uppercase;
+  cursor:pointer;border-radius:4px;
+  transition:all .25s;
+}
+#replay-btn:hover{background:var(--cyan);color:var(--bg);box-shadow:0 0 24px #00f5d444}
+
+/* ── AFTER VIDEO: INFO SECTIONS ── */
+#info-section{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:6rem 2rem;position:relative;overflow:hidden;
+}
+#info-section::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);
+  opacity:.4;
+}
+
+.info-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:3rem;max-width:900px;width:100%;position:relative;z-index:2;
+}
+@media(max-width:640px){.info-grid{grid-template-columns:1fr}}
+
+.info-card{
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.02);
+  padding:2rem;border-radius:2px;
+  position:relative;overflow:hidden;
+  transition:border-color .3s,box-shadow .3s;
+}
+.info-card:hover{
+  border-color:var(--accent);
+  box-shadow:0 0 40px #7c3aff22;
+}
+.info-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.info-card:hover::before{opacity:1}
+
+.card-num{
+  font-size:.55rem;letter-spacing:.3em;color:var(--accent);
+  text-transform:uppercase;margin-bottom:.8rem;
+}
+.card-title{
+  font-family:'Syne',sans-serif;font-weight:700;
+  font-size:1.4rem;color:var(--white);margin-bottom:.7rem;
+}
+.card-body{font-size:.72rem;line-height:1.9;color:var(--muted)}
+.card-body strong{color:var(--cyan)}
+
+/* instagram card full width */
+.info-card.ig-card{
+  grid-column:1/-1;
+  display:flex;align-items:center;gap:2rem;
+}
+@media(max-width:640px){.info-card.ig-card{flex-direction:column;text-align:center}}
+
+.ig-handle{
+  font-family:'Syne',sans-serif;font-size:clamp(1.6rem,5vw,2.8rem);
+  font-weight:800;
+  background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
+}
+.ig-btn{
+  margin-left:auto;
+  display:inline-flex;align-items:center;gap:.6rem;
+  padding:.75rem 2rem;
+  background:linear-gradient(135deg,#f58529,#dd2a7b);
+  color:#fff;text-decoration:none;
+  font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;
+  border-radius:4px;font-family:'DM Mono',monospace;
+  transition:opacity .2s,transform .2s;flex-shrink:0;
+}
+.ig-btn:hover{opacity:.85;transform:translateY(-2px)}
+@media(max-width:640px){.ig-btn{margin-left:0}}
+</style>
 </head>
 <body>
 
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+  <div class="hero-tag">Portfolio · 2025</div>
+  <h1>
+    <span class="stroke">JAF</span><span class="solid">FER</span>
+  </h1>
+  <p class="hero-sub">Web Developer &nbsp;·&nbsp; <span>GHSS Thatarka · 12th</span></p>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <span class="scroll-label">Scroll to explore</span>
+  </div>
+</section>
+
+<!-- ══ SCROLL ANIMATION SECTION ══ -->
 <div id="scroll-spacer">
   <div id="stage">
-    <div id="title">AUZE</div>
+    <div class="section-eyebrow">// scroll_animation.mp4</div>
 
-    <div id="video-wrap">
-      <video id="vid" src="auze.mp4" preload="auto" muted playsinline></video>
-      <div id="progress-bar"></div>
+    <div class="side-text left">Jaffer · Dev</div>
+    <div class="side-text right">@nova_jfrrr</div>
+
+    <div id="video-outer">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+
+      <div id="video-wrap">
+        <video id="vid" src="auze.mp4" preload="auto" muted playsinline></video>
+        <div id="video-wrap" style="all:unset;position:absolute;inset:0;pointer-events:none"></div>
+      </div>
+
+      <div id="track"><div id="progress-bar"></div></div>
     </div>
 
     <div id="steps">
@@ -269,117 +399,161 @@
       <div class="dot" id="d3"></div>
     </div>
 
-    <div id="step-label">SCROLL STEP <span id="step-num">1</span> / 4</div>
-
-    <div id="time-display">
-      <div>TIME</div>
-      <div class="current" id="time-num">0.0s</div>
-      <div>/ 8.0s</div>
+    <div id="step-counter">
+      STEP &nbsp;<em id="step-num">1</em>&nbsp;/ 4
     </div>
-
-    <div id="hint">scroll down</div>
   </div>
 </div>
 
+<!-- ══ INFO SECTION ══ -->
+<section id="info-section">
+  <div class="info-grid">
+
+    <div class="info-card">
+      <div class="card-num">01 · About</div>
+      <div class="card-title">Who I Am</div>
+      <div class="card-body">
+        I'm <strong>Jaffer</strong>, a passionate web developer and student currently in <strong>12th grade</strong> at GHSS Thatarka. I craft clean, modern, and functional websites.
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="card-num">02 · Skills</div>
+      <div class="card-title">What I Build</div>
+      <div class="card-body">
+        <strong>HTML · CSS · JavaScript</strong><br/>
+        Responsive designs, animations, interactive UI, and creative web experiences.
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="card-num">03 · School</div>
+      <div class="card-title">GHSS Thatarka</div>
+      <div class="card-body">
+        Student · <strong>12th Class</strong><br/>
+        Balancing academics with a deep love for web development and creative coding.
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="card-num">04 · Vision</div>
+      <div class="card-title">My Goal</div>
+      <div class="card-body">
+        To become a <strong>professional full-stack developer</strong>, building products that are fast, beautiful, and meaningful.
+      </div>
+    </div>
+
+    <div class="info-card ig-card">
+      <div>
+        <div class="card-num">05 · Connect</div>
+        <div class="ig-handle">@nova_jfrrr</div>
+      </div>
+      <a class="ig-btn" href="https://instagram.com/nova_jfrrr" target="_blank">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg>
+        Follow on Instagram
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ END SCREEN ══ -->
 <div id="end-screen">
-  <h2>AUZE</h2>
-  <p>Animation Complete</p>
-  <button id="restart-btn" onclick="restartExperience()">&#x21BA; Replay</button>
+  <div class="end-tag">// animation complete</div>
+  <h2>JAFFER</h2>
+  <p class="tagline">Web Developer · GHSS Thatarka · 12th Class</p>
+  <div class="end-links">
+    <a class="ig-link" href="https://instagram.com/nova_jfrrr" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg>
+      @nova_jfrrr
+    </a>
+    <button id="replay-btn" onclick="restartExperience()">↺ Replay</button>
+  </div>
 </div>
 
 <script>
-  const vid        = document.getElementById('vid');
-  const progressBar= document.getElementById('progress-bar');
-  const dots       = [0,1,2,3].map(i => document.getElementById('d'+i));
-  const stepNumEl  = document.getElementById('step-num');
-  const timeNumEl  = document.getElementById('time-num');
-  const endScreen  = document.getElementById('end-screen');
-  const spacer     = document.getElementById('scroll-spacer');
+// ── cursor ──
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; cursor.style.left=mx+'px'; cursor.style.top=my+'px'; });
+(function animRing(){rx+=(mx-rx)*.12; ry+=(my-ry)*.12; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(animRing);})();
+document.querySelectorAll('a,button,.dot').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cursor.style.width='20px';cursor.style.height='20px';ring.style.opacity='1';});
+  el.addEventListener('mouseleave',()=>{cursor.style.width='12px';cursor.style.height='12px';ring.style.opacity='.6';});
+});
 
-  const TOTAL_DURATION = 8;   // seconds
-  const STEPS          = 4;   // 4 scroll steps
-  const SEC_PER_STEP   = TOTAL_DURATION / STEPS; // 2s each
+// ── video scrub ──
+const vid   = document.getElementById('vid');
+const pbar  = document.getElementById('progress-bar');
+const vout  = document.getElementById('video-outer');
+const dots  = [0,1,2,3].map(i=>document.getElementById('d'+i));
+const snEl  = document.getElementById('step-num');
+const endSc = document.getElementById('end-screen');
+const spacer= document.getElementById('scroll-spacer');
 
-  let lastStep = -1;
-  let animFrame;
+const TOTAL = 8, STEPS = 4, SPR = TOTAL/STEPS;
+let lastStep=-1, af;
 
-  // ── Init video ──
-  vid.addEventListener('loadedmetadata', () => {
-    vid.currentTime = 0;
-    vid.pause();
+vid.addEventListener('loadedmetadata',()=>{ vid.currentTime=0; vid.pause(); });
+
+function spacerH(){ return spacer.offsetHeight - window.innerHeight; }
+
+window.addEventListener('scroll',()=>{
+  const total = spacerH();
+  if(total<=0) return;
+  const prog  = Math.min(window.scrollY/total,1);
+  const step  = Math.min(Math.floor(prog*STEPS), STEPS-1);
+
+  if(step!==lastStep){
+    lastStep=step;
+    seekTo((step+1)*SPR);
+    updateUI(step);
+  }
+  if(prog>=.99) showEnd();
+  else endSc.classList.remove('show');
+},{passive:true});
+
+function seekTo(target){
+  cancelAnimationFrame(af);
+  vid.pause();
+  vout.classList.add('playing');
+  function tick(){
+    const d = target - vid.currentTime;
+    if(Math.abs(d)<.04){ vid.currentTime=target; vout.classList.remove('playing'); sync(); return; }
+    vid.currentTime += d*.09;
+    sync();
+    af=requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function sync(){
+  pbar.style.width = (vid.currentTime/TOTAL*100)+'%';
+}
+
+function updateUI(step){
+  dots.forEach((d,i)=>{
+    d.classList.toggle('active', i===step);
+    d.classList.toggle('done',   i<step);
   });
+  snEl.textContent = step+1;
+}
 
-  // ── Scroll handler ──
-  function spacerHeight() {
-    return spacer.offsetHeight - window.innerHeight;
-  }
+function showEnd(){
+  endSc.classList.add('show');
+  vid.currentTime=TOTAL; sync();
+}
 
-  window.addEventListener('scroll', () => {
-    const total = spacerHeight();
-    if (total <= 0) return;
-
-    const progress = Math.min(window.scrollY / total, 1); // 0→1
-    const rawStep  = progress * STEPS;
-    const step     = Math.min(Math.floor(rawStep), STEPS - 1); // 0→3
-
-    if (step !== lastStep) {
-      lastStep = step;
-      animateTo((step + 1) * SEC_PER_STEP);
-      updateUI(step);
-    }
-
-    if (progress >= 0.99) {
-      endScreen.classList.add('show');
-    } else {
-      endScreen.classList.remove('show');
-    }
-  }, { passive: true });
-
-  // ── Smooth seek animation ──
-  function animateTo(targetTime) {
-    cancelAnimationFrame(animFrame);
-    vid.pause();
-
-    function tick() {
-      const diff = targetTime - vid.currentTime;
-      if (Math.abs(diff) < 0.04) {
-        vid.currentTime = targetTime;
-        tick_ui();
-        return;
-      }
-      vid.currentTime += diff * 0.08;
-      tick_ui();
-      animFrame = requestAnimationFrame(tick);
-    }
-
-    function tick_ui() {
-      const pct = (vid.currentTime / TOTAL_DURATION) * 100;
-      progressBar.style.width = pct + '%';
-      timeNumEl.textContent   = vid.currentTime.toFixed(1) + 's';
-    }
-
-    tick();
-  }
-
-  // ── UI dots & step label ──
-  function updateUI(step) {
-    dots.forEach((d, i) => d.classList.toggle('active', i <= step));
-    stepNumEl.textContent = step + 1;
-  }
-
-  // ── Restart ──
-  function restartExperience() {
-    endScreen.classList.remove('show');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => {
-      cancelAnimationFrame(animFrame);
-      vid.currentTime = 0;
-      progressBar.style.width = '0%';
-      timeNumEl.textContent = '0.0s';
-      lastStep = -1;
-      updateUI(0);
-    }, 700);
-  }
+function restartExperience(){
+  endSc.classList.remove('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>{
+    cancelAnimationFrame(af);
+    vid.currentTime=0; sync();
+    lastStep=-1; updateUI(0);
+  },700);
+}
 </script>
 </body>
 </html>
